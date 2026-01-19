@@ -56,13 +56,13 @@ if (!canConnect)
 
 logger.LogInformation("✅ Подключение успешно!");
 
-// 2. Запускаем скачивание
+
 // 2. Запускаем скачивание
 try
 {
-    string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    string homePath = GetProjectRoot();
     string downloadsPath = Path.Combine(homePath, settings.DownloadFolder);
-    string savePath = Path.Combine(downloadsPath, "consultant_latest.rar");
+    string savePath = Path.Combine(downloadsPath, "temp_file.rar");//Заглушка имя вайла береться из FileDownloader
     
     // Создаем абсолютный путь если нужно
     if (!Path.IsPathRooted(savePath))
@@ -106,3 +106,28 @@ catch (Exception ex)
 }
 
 logger.LogInformation("\n=== Завершение работы ===");
+ static string GetProjectRoot()
+{
+    // Метод 1: Ищем .csproj файл
+    string currentDir = Directory.GetCurrentDirectory();
+
+    while (!string.IsNullOrEmpty(currentDir))
+    {
+        // Ищем файл .csproj в текущей папке
+        var csprojFiles = Directory.GetFiles(currentDir, "*.csproj");
+        if (csprojFiles.Length > 0)
+        {
+            return currentDir; // Нашли корень проекта
+        }
+
+        // Поднимаемся на уровень выше
+        string parentDir = Path.GetDirectoryName(currentDir);
+        if (parentDir == currentDir) // Достигли корня диска
+            break;
+
+        currentDir = parentDir;
+    }
+
+    // Если не нашли .csproj, используем текущую папку
+    return Directory.GetCurrentDirectory();
+}

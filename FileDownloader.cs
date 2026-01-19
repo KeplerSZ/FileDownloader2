@@ -30,17 +30,27 @@ namespace FileDownloader2.Services
                 //Находим самый свежий фаил
                 var latestFile = FindLatestUpgradeFile(htmlContent);
 
+                
+
+                
                 if (string.IsNullOrEmpty(latestFile))
                 {
                      _logger.LogWarning("Не найдены файлы для скачивания");
                     return null;
                 }
-
+                string fileNameForSave = latestFile;
+                
                 _logger.LogInformation("Найден файл: {FileName}", latestFile);
 
-                string downloadUrl = _appSettings.DownloadBaseUrl + latestFile;
+                string downloadUrl = _appSettings.DownloadBaseUrl + fileNameForSave;
 
-                return await DownloadActualFile(downloadUrl, savePath);
+                //Сохраняем с оригинальным именем
+                string directory = Path.GetDirectoryName(savePath); // Папка из savePath
+                string correctSavePath = Path.Combine(directory, latestFile);
+                _logger.LogInformation("Сохраняю в: {Path}", correctSavePath);
+                //скачиваем
+
+                return await DownloadActualFile(downloadUrl, correctSavePath);
             
             }
             catch (System.Exception)
@@ -49,8 +59,19 @@ namespace FileDownloader2.Services
                 throw;
             }
         }
-    
-    private async Task<string> DownloadActualFile(string fileUrl, string savePath)
+        public async Task<string> GetLatestFileNameAsync(string url)
+        {
+            try
+            {
+                string htmlContent = await _httpClient.GetStringAsync(url);
+                return FindLatestUpgradeFile(htmlContent);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+        private async Task<string> DownloadActualFile(string fileUrl, string savePath)
 {
     try
     {
@@ -60,9 +81,23 @@ namespace FileDownloader2.Services
         var directory = Path.GetDirectoryName(savePath);
         if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             Directory.CreateDirectory(directory);
-        
-        // Скачиваем файл
-        using var response = await _httpClient.GetAsync(fileUrl);
+
+                // 2. ПРОСТАЯ ПРОВЕРКА: если файл уже существует
+                if (File.Exists(savePath))
+                {
+                    _logger.LogInformation($"Файл уже скачан: {savePath}");
+                    Console.WriteLine($"Файл уже существует: {Path.GetFileName(savePath)}");
+
+                    // Показываем информацию о существующем файле
+                    FileInfo existingFile = new FileInfo(savePath);
+                    Console.WriteLine($"Размер: {existingFile.Length} байт");
+                    Console.WriteLine($"Создан: {existingFile.CreationTime:dd.MM.yyyy HH:mm}");
+
+                    return savePath; // Возвращаем путь к существующему файлу
+                }
+
+                // Скачиваем файл
+                using var response = await _httpClient.GetAsync(fileUrl);
         
         if (!response.IsSuccessStatusCode)
         {
@@ -153,6 +188,9 @@ namespace FileDownloader2.Services
         }
     }
     
+
+    
+
     // Метод для извлечения даты из имени файла
     private DateTime ExtractDateFromFileName(string fileName)
     {

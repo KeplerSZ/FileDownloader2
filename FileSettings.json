@@ -2,10 +2,10 @@
   "SitesSettings": {
     "FileUrl": "https://ric.consultant.ru/materials/?path=Soft",
     "DownloadBaseUrl": "https://ric.consultant.ru/materials/Download/",
-    "Username": "ric",
+    "Username": "ric380zsa",
     "Password": "",
     "TestUrl": "https://ric.consultant.ru",
-    "DownloadFolder": "FileDownloader2/Downloads",
+    "DownloadFolder": "Downloands",
     "LogFolder": "FileDownloader/Logs"
   }
 }
